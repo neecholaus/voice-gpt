@@ -1,6 +1,6 @@
 build:
-	@GOOS=linux GOARCH=arm64 go build -o profinbox-arm64 .
+	@cd ./text-to-voice; GOOS=linux GOARCH=arm64 go build -o texttovoice .
 
 setup-piper:
-	@chmod +x provision.sh
+	@chmod +x setup-piper.sh
 	@./setup-piper.sh
