@@ -12,6 +12,28 @@ type PiperConfig struct {
 	Speaker string
 }
 
+func (c *PiperConfig) getCmdString(text string) string {
+	// make filename that is beginning of the text
+	desiredFileNameLength := 30
+	textLength := len(text)
+	if desiredFileNameLength > textLength {
+		desiredFileNameLength = textLength
+	}
+	filename := text[:desiredFileNameLength]
+	filename = strings.Replace(filename, " ", "-", -1)
+
+	return strings.Join([]string{
+		"echo",
+		fmt.Sprintf("'%s'", text),
+		"|",
+		c.Path,
+		fmt.Sprintf("--model %s", c.Model),
+		fmt.Sprintf("-f /var/opt/responses/%s.wav", filename),
+		"-s",
+		c.Speaker,
+	}, " ")
+}
+
 func defaultPiperConfig() *PiperConfig {
 	return &PiperConfig{
 		Path:    "/var/opt/piper/piper",
@@ -20,25 +42,19 @@ func defaultPiperConfig() *PiperConfig {
 	}
 }
 
-func createWav(text string) {
+func createWav(text string) (string, error) {
 	config := defaultPiperConfig()
 
-	cmdPieces := []string{
-		"echo",
-		fmt.Sprintf("'%s'", text),
-		"|",
-		config.Path,
-		fmt.Sprintf("--model %s", config.Model),
-		"--f test.wav",
-		"--d /var/opt/responses",
-		"-s",
-		config.Speaker,
-	}
+	cmdString := config.getCmdString(text)
 
-	cmd := exec.Command("bash", "-c", strings.Join(cmdPieces, " "))
+	fmt.Println(cmdString)
 
-	_, err := cmd.Output()
+	cmd := exec.Command("bash", "-c", cmdString)
+
+	s, err := cmd.Output()
 	if err != nil {
-		fmt.Println(fmt.Errorf("createWav failed: %s", err))
+		return "", err
 	}
+
+	return string(s), nil
 }

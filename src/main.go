@@ -1,5 +1,9 @@
 package main
 
+import "fmt"
+
 func main() {
-	createWav("here i am testing from golang. i hope this works.")
+	path, _ := createWav("a test from the main go file")
+
+	fmt.Printf("new wave is at: %s\n", path)
 }
