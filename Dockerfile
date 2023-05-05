@@ -1,4 +1,4 @@
-FROM debian
+FROM arm64v8/golang:1.20
 
 WORKDIR /var/opt
 
@@ -16,5 +16,7 @@ RUN tar -xf /var/opt/piper-voices/en-us-libritts-high.tar.gz -C /var/opt/piper-v
 RUN mkdir /var/opt/responses
 RUN echo "echo 'this is a test.' | \
     /var/opt/piper/piper --model /var/opt/piper-voices/en-us-libritts-high.onnx --f a.wav --d /var/opt/responses" > /var/opt/test.sh -s 13
+
+ADD ./src /var/opt/src
 
 CMD sleep
