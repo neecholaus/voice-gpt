@@ -17,6 +17,6 @@ RUN mkdir /var/opt/responses
 RUN echo "echo 'this is a test.' | \
     /var/opt/piper/piper --model /var/opt/piper-voices/en-us-libritts-high.onnx --f a.wav --d /var/opt/responses" > /var/opt/test.sh -s 13
 
-ADD ./src /var/opt/src
+ADD ./profinbox-arm64 /var/opt/profinbox
 
 CMD sleep

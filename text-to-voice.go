@@ -47,8 +47,6 @@ func createWav(text string) (string, error) {
 
 	cmdString := config.getCmdString(text)
 
-	fmt.Println(cmdString)
-
 	cmd := exec.Command("bash", "-c", cmdString)
 
 	s, err := cmd.Output()
