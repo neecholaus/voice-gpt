@@ -2,20 +2,26 @@ package text_to_voice
 
 import (
 	"fmt"
+	"math/rand"
 	"os/exec"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-func KeepConverting(textChan *chan string) {
+func KeepConverting(textChan *chan string, ttsDone *sync.WaitGroup) {
 	go func() {
 		for {
 			start := time.Now().UnixMilli()
 
 			text := <-*textChan
+
 			_, _ = createWav(text)
 
 			fmt.Printf("converted text (%d) : %s\n", time.Now().UnixMilli()-start, text)
+
+			ttsDone.Done()
 		}
 	}()
 }
@@ -36,6 +42,10 @@ func (c *PiperConfig) getCmdString(text string) string {
 	filename := text[:desiredFileNameLength]
 	filename = strings.Replace(filename, " ", "-", -1)
 
+	speaker := strconv.Itoa(rand.Intn(910) + 1)
+
+	fmt.Printf("speaker: %s\f", speaker)
+
 	return strings.Join([]string{
 		"echo",
 		fmt.Sprintf("'%s'", text),
@@ -44,7 +54,7 @@ func (c *PiperConfig) getCmdString(text string) string {
 		fmt.Sprintf("--model %s", c.Model),
 		fmt.Sprintf("-f /var/opt/responses/%s.wav", filename),
 		"-s",
-		c.Speaker,
+		speaker,
 	}, " ")
 }
 

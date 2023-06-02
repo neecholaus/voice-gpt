@@ -8,6 +8,7 @@ import (
 	text_to_voice "neecholaus/profinabox/text-to-voice"
 	"os"
 	"strings"
+	"sync"
 )
 
 func main() {
@@ -16,9 +17,10 @@ func main() {
 
 	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
 
-	t2s := make(chan string)
+	tts := make(chan string)
+	ttsDone := sync.WaitGroup{}
 
-	text_to_voice.KeepConverting(&t2s)
+	text_to_voice.KeepConverting(&tts, &ttsDone)
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -47,7 +49,10 @@ func main() {
 			fmt.Printf("ai error: %s\n", err.Error())
 		}
 
-		t2s <- resp.Choices[0].Message.Content
+		ttsDone.Add(1)
+		tts <- resp.Choices[0].Message.Content
+
+		ttsDone.Wait()
 	}
 }
 
