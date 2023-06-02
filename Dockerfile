@@ -9,4 +9,6 @@ RUN ./setup-piper.sh
 COPY ./profinabox /var/opt/profinabox
 RUN chmod +x /var/opt/profinabox
 
+COPY ./.env /var/opt/.env
+
 CMD sleep
