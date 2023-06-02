@@ -1,10 +1,24 @@
-package main
+package text_to_voice
 
 import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 )
+
+func KeepConverting(textChan *chan string) {
+	go func() {
+		for {
+			start := time.Now().UnixMilli()
+
+			text := <-*textChan
+			_, _ = createWav(text)
+
+			fmt.Printf("converted text (%d) : %s\n", time.Now().UnixMilli()-start, text)
+		}
+	}()
+}
 
 type PiperConfig struct {
 	Path    string

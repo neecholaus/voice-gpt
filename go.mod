@@ -1,3 +1,3 @@
-module neecholaus/prof-in-a-box
+module neecholaus/profinabox
 
 go 1.18

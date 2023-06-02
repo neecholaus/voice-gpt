@@ -1,41 +1,25 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"net"
+	text_to_voice "neecholaus/profinabox/text-to-voice"
 	"os"
+	"strings"
 )
 
 func main() {
-	os.Remove("./socket.sock")
 
-	socket, err := net.Listen("unix", "./socket.sock")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	t2s := make(chan string)
 
-	defer socket.Close()
+	text_to_voice.KeepConverting(&t2s)
 
+	reader := bufio.NewReader(os.Stdin)
 	for {
-		conn, err := socket.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection:", err)
-		}
+		fmt.Print("-> ")
+		text, _ := reader.ReadString('\n')
+		text = strings.Replace(text, "\n", "", -1)
 
-		// Read from the connection
-		buf := make([]byte, 1024)
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading from connection:", err)
-			return
-		}
-
-		// Print the received message
-		fmt.Println(string(buf[:n]))
-
-		// Close the connection
-		conn.Close()
+		t2s <- text
 	}
-
 }

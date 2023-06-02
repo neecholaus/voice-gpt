@@ -1,5 +1,6 @@
 build:
-	@cd ./text-to-voice; GOOS=linux GOARCH=arm64 go build -o texttovoice .
+	@GOOS=linux GOARCH=arm go build .
+	@docker build -t profinabox .
 
 setup-piper:
 	@chmod +x setup-piper.sh

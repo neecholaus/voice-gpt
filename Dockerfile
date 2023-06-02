@@ -6,7 +6,7 @@ ADD setup-piper.sh /var/opt/setup-piper.sh
 RUN chmod +x /var/opt/setup-piper.sh
 RUN ./setup-piper.sh
 
-COPY ./text-to-voice/texttovoice /var/opt/texttovoice
-RUN chmod +x /var/opt/texttovoice
+COPY ./profinabox /var/opt/profinabox
+RUN chmod +x /var/opt/profinabox
 
 CMD sleep
