@@ -2,61 +2,35 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"fmt"
-	openai "github.com/sashabaranov/go-openai"
-	text_to_voice "neecholaus/profinabox/text-to-voice"
+	"github.com/sashabaranov/go-openai"
 	"os"
 	"strings"
 	"sync"
 )
 
+type Config struct {
+	AiKey string
+	Mode  string
+}
+
 func main() {
-	loadDotEnv()
-	fmt.Println(os.Getenv("OPENAI_KEY"))
+	config := initConfig()
 
-	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
+	tp := Transport{
+		Ai:      openai.NewClient(os.Getenv("OPENAI_KEY")),
+		Tts:     make(chan string),
+		TtsDone: sync.WaitGroup{},
+	}
 
-	tts := make(chan string)
-	ttsDone := sync.WaitGroup{}
-
-	text_to_voice.KeepConverting(&tts, &ttsDone)
-
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Print("-> ")
-		text, _ := reader.ReadString('\n')
-		text = strings.Replace(text, "\n", "", -1)
-
-		resp, err := ai.CreateChatCompletion(
-			context.Background(),
-			openai.ChatCompletionRequest{
-				Model: openai.GPT3Dot5Turbo,
-				Messages: []openai.ChatCompletionMessage{
-					{
-						Role:    openai.ChatMessageRoleUser,
-						Content: "Give me the most clear and concise responses you can.",
-					},
-					{
-						Role:    openai.ChatMessageRoleUser,
-						Content: text,
-					},
-				},
-			},
-		)
-
-		if err != nil {
-			fmt.Printf("ai error: %s\n", err.Error())
-		}
-
-		ttsDone.Add(1)
-		tts <- resp.Choices[0].Message.Content
-
-		ttsDone.Wait()
+	if config.Mode == "text" {
+		waitForText(&tp)
+	} else {
+		fmt.Printf("the mode (%s) is not supported", config.Mode)
 	}
 }
 
-func loadDotEnv() {
+func initConfig() *Config {
 	file, _ := os.Open(".env")
 
 	defer file.Close()
@@ -68,9 +42,31 @@ func loadDotEnv() {
 
 		parts := strings.Split(line, "=")
 
+		if len(parts) < 2 {
+			continue
+		}
+
 		err := os.Setenv(parts[0], parts[1])
 		if err != nil {
-			fmt.Println("could not sent env var")
+			fmt.Println("could not set env var")
 		}
 	}
+
+	config := Config{}
+
+	if os.Getenv("OPENAI_KEY") != "" {
+		config.AiKey = os.Getenv("OPENAI_KEY")
+	} else {
+		panic("missing keys")
+	}
+
+	if os.Getenv("MODE") != "" {
+		config.Mode = os.Getenv("MODE")
+	} else {
+		config.Mode = "text"
+	}
+
+	fmt.Println(config)
+
+	return &config
 }
