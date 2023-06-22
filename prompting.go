@@ -7,8 +7,10 @@ import (
 	"github.com/sashabaranov/go-openai"
 	text_to_voice "neecholaus/profinabox/text-to-voice"
 	"os"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Transport struct {
@@ -34,6 +36,38 @@ func waitForText(tp *Transport) {
 		tp.Tts <- reply
 
 		tp.TtsDone.Wait()
+	}
+}
+
+func waitForAudioIn(tp *Transport) {
+	for {
+		files, err := os.ReadDir("./audio-in")
+		if err != nil {
+			fmt.Printf("could not read audio-in dir: %s\n", err.Error())
+		}
+
+		if len(files) < 1 {
+			fmt.Println("no files")
+			time.Sleep(time.Second)
+			continue
+		}
+
+		sortedFilenames := []string{}
+		for _, file := range files {
+			sortedFilenames = append(sortedFilenames, file.Name())
+		}
+		sort.Strings(sortedFilenames)
+
+		for _, file := range files {
+			if file.IsDir() == true {
+				continue
+			}
+
+			fmt.Printf("next for stt: %s\n", file.Name())
+			break
+		}
+
+		time.Sleep(time.Second)
 	}
 }
 

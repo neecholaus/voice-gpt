@@ -25,6 +25,8 @@ func main() {
 
 	if config.Mode == "text" {
 		waitForText(&tp)
+	} else if config.Mode == "voice" {
+		waitForAudioIn(&tp)
 	} else {
 		fmt.Printf("the mode (%s) is not supported", config.Mode)
 	}
@@ -65,8 +67,6 @@ func initConfig() *Config {
 	} else {
 		config.Mode = "text"
 	}
-
-	fmt.Println(config)
 
 	return &config
 }
