@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/sashabaranov/go-openai"
-	text_to_voice "neecholaus/profinabox/text-to-voice"
+	text_to_voice "neecholaus/voicegpt/text-to-voice"
 	"os"
 	"sort"
 	"strings"
