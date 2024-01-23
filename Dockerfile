@@ -9,6 +9,8 @@ RUN ./setup-piper.sh
 COPY ./voicegpt /var/opt/voicegpt
 RUN chmod +x /var/opt/voicegpt
 
+RUN chmod 0777 /var/opt/responses
+
 COPY ./.env /var/opt/.env
 COPY ./audio-in /var/opt/audio-in
 

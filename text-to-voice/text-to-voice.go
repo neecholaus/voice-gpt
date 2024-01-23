@@ -2,9 +2,7 @@ package text_to_voice
 
 import (
 	"fmt"
-	"math/rand"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,13 +11,15 @@ import (
 func KeepConverting(textChan *chan string, ttsDone *sync.WaitGroup) {
 	go func() {
 		for {
-			start := time.Now().UnixMilli()
+			// start := time.Now().UnixMilli()
 
 			text := <-*textChan
 
-			_, _ = createWav(text)
+			fmt.Println(text)
 
-			fmt.Printf("converted text (%d) : %s\n", time.Now().UnixMilli()-start, text)
+			// _, _ = createWav(text)
+
+			// fmt.Printf("converted text (%d) : %s\n", time.Now().UnixMilli()-start, text)
 
 			ttsDone.Done()
 		}
@@ -42,9 +42,11 @@ func (c *PiperConfig) getCmdString(text string) string {
 	filename := text[:desiredFileNameLength]
 	filename = strings.Replace(filename, " ", "-", -1)
 
-	speaker := strconv.Itoa(rand.Intn(910) + 1)
+	//speaker := strconv.Itoa(rand.Intn(910) + 1)
 
-	fmt.Printf("speaker: %s\f", speaker)
+	//fmt.Printf("speaker: %s\f", speaker)
+	//speaker := "13"
+	speaker := "23"
 
 	return strings.Join([]string{
 		"echo",
@@ -52,7 +54,7 @@ func (c *PiperConfig) getCmdString(text string) string {
 		"|",
 		c.Path,
 		fmt.Sprintf("--model %s", c.Model),
-		fmt.Sprintf("-f /var/opt/responses/%s.wav", filename),
+		fmt.Sprintf("-f /var/opt/responses/%d.wav", time.Now().UnixMilli()),
 		"-s",
 		speaker,
 	}, " ")
@@ -70,6 +72,8 @@ func createWav(text string) (string, error) {
 	config := defaultPiperConfig()
 
 	cmdString := config.getCmdString(text)
+
+	fmt.Println(cmdString)
 
 	cmd := exec.Command("bash", "-c", cmdString)
 

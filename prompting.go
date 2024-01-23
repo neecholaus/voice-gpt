@@ -4,19 +4,21 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/sashabaranov/go-openai"
 	text_to_voice "neecholaus/voicegpt/text-to-voice"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 type Transport struct {
-	Ai      *openai.Client
-	Tts     chan string
-	TtsDone sync.WaitGroup
+	Ai             *openai.Client
+	Tts            chan string
+	TtsDone        sync.WaitGroup
+	MessageHistory *[]openai.ChatCompletionMessage
 }
 
 // Useful for testing without voice.
@@ -30,7 +32,23 @@ func waitForText(tp *Transport) {
 		text, _ := reader.ReadString('\n')
 		text = strings.Replace(text, "\n", "", -1)
 
-		reply := getPromptReply(tp.Ai, text)
+		*tp.MessageHistory = append(*tp.MessageHistory, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: text,
+		})
+
+		if len(*tp.MessageHistory) > 10 {
+			amount := len(*tp.MessageHistory) - 10
+			fmt.Printf("removing %d messages from history", amount)
+			*tp.MessageHistory = (*tp.MessageHistory)[amount:]
+		}
+
+		fmt.Printf("messages: %d\n", len(*tp.MessageHistory))
+		addMessageToLog(&(*tp.MessageHistory)[len(*tp.MessageHistory)-1])
+
+		reply := getPromptReply(tp.Ai, tp.MessageHistory)
+
+		// createWav
 
 		tp.TtsDone.Add(1)
 		tp.Tts <- reply
@@ -71,27 +89,48 @@ func waitForAudioIn(tp *Transport) {
 	}
 }
 
-func getPromptReply(ai *openai.Client, text string) string {
+func getPromptReply(ai *openai.Client, history *[]openai.ChatCompletionMessage) string {
+	// add role always to beginning
+	messages := append([]openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: os.Getenv("GPT_ROLE"),
+		},
+	}, *history...)
+
 	resp, err := ai.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model: openai.GPT3Dot5Turbo,
-			Messages: []openai.ChatCompletionMessage{
+			Messages: append([]openai.ChatCompletionMessage{
 				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: "Give me the most clear and concise responses you can.",
-				},
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: text,
+					Role:    openai.ChatMessageRoleSystem,
+					Content: os.Getenv("GPT_ROLE"),
 				},
 			},
+				messages...,
+			),
 		},
 	)
 
 	if err != nil {
 		fmt.Printf("ai error: %s\n", err.Error())
+		return ""
 	}
 
+	*history = append(*history, resp.Choices[0].Message)
+	addMessageToLog(&resp.Choices[0].Message)
+
 	return resp.Choices[0].Message.Content
+}
+
+func addMessageToLog(message *openai.ChatCompletionMessage) {
+	f, _ := os.OpenFile("./.conversation.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+
+	defer f.Close()
+
+	_, err := f.WriteString(fmt.Sprintf("\n (%s)\n%s\n", message.Role, message.Content))
+	if err != nil {
+		fmt.Println(err)
+	}
 }

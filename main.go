@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/sashabaranov/go-openai"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 type Config struct {
@@ -18,9 +19,10 @@ func main() {
 	config := initConfig()
 
 	tp := Transport{
-		Ai:      openai.NewClient(os.Getenv("OPENAI_KEY")),
-		Tts:     make(chan string),
-		TtsDone: sync.WaitGroup{},
+		Ai:             openai.NewClient(os.Getenv("OPENAI_KEY")),
+		Tts:            make(chan string),
+		TtsDone:        sync.WaitGroup{},
+		MessageHistory: &[]openai.ChatCompletionMessage{},
 	}
 
 	if config.Mode == "text" {
