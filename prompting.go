@@ -28,9 +28,22 @@ func waitForText(tp *Transport) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Print("-> ")
+		fmt.Print("\n\n-> ")
 		text, _ := reader.ReadString('\n')
 		text = strings.Replace(text, "\n", "", -1)
+
+		if text == "sys history" {
+			for msgIdx := range *tp.MessageHistory {
+				fmt.Printf("%v\n", (*tp.MessageHistory)[msgIdx])
+			}
+			continue
+		}
+
+		if text == "sys rewind" {
+			*tp.MessageHistory = (*tp.MessageHistory)[:len((*tp.MessageHistory))-2]
+			println("rewound 2 messages")
+			continue
+		}
 
 		*tp.MessageHistory = append(*tp.MessageHistory, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
@@ -39,11 +52,9 @@ func waitForText(tp *Transport) {
 
 		if len(*tp.MessageHistory) > 10 {
 			amount := len(*tp.MessageHistory) - 10
-			fmt.Printf("removing %d messages from history", amount)
 			*tp.MessageHistory = (*tp.MessageHistory)[amount:]
 		}
 
-		fmt.Printf("messages: %d\n", len(*tp.MessageHistory))
 		addMessageToLog(&(*tp.MessageHistory)[len(*tp.MessageHistory)-1])
 
 		reply := getPromptReply(tp.Ai, tp.MessageHistory)
@@ -115,6 +126,8 @@ func getPromptReply(ai *openai.Client, history *[]openai.ChatCompletionMessage) 
 
 	if err != nil {
 		fmt.Printf("ai error: %s\n", err.Error())
+		// remove most recent message since it caused an error.
+		*history = (*history)[:len((*history))-1]
 		return ""
 	}
 

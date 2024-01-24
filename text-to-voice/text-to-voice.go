@@ -15,7 +15,7 @@ func KeepConverting(textChan *chan string, ttsDone *sync.WaitGroup) {
 
 			text := <-*textChan
 
-			fmt.Println(text)
+			fmt.Printf("\n<- %s", text)
 
 			// _, _ = createWav(text)
 
